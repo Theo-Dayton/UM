@@ -1,0 +1,212 @@
+README - HW6: UM
+
+Team:
+    Grace Ye (gye01)
+    Yuehan (Eunice) Dai (ydai05)
+
+Acknowledgements:
+    Alex Zsikla: Helped us understand confusing parts of the assignment
+
+
+---------------------------------------------------------------------------
+
+Correctly Implemented:
+    All parts to implement the basic 14 instructions is working but may not in 
+    an optimized performance. 
+
+Incorrectly Implemented:
+    For the tests in umbin, we did not see the output of codex.umz
+    So it may take too much time for our um to execute the instructions. 
+
+Significant Changes From Design:
+    - We no longer keep track of the next memory code (the end) in an integer 
+      since we can use Seq_addhi instead to just add to the end
+    - We no longer put the memory codes into a stack; we put them 
+      in a sequence instead
+    - For the main memory, the segments are stored in a sequence, but the 
+      words in each segment are stored in a uarray
+    - We created an instruction.c/.h to allow for any instructions being read 
+      into the program to be more easily accessed throughout the program
+
+
+
+---------------------------------------------------------------------------
+Architecture:
+
+    Modules Used:
+        - main.c
+        - um.c/.h
+        - instruction.c/.h
+        - execute.c/.h
+        - memory.c/.h
+    
+    Abstractions Each Module Implements:
+        - main.    : Highest level of abstraction; 
+                     handles command line arguments
+        - um.c/.h: Runs the um at the next highest level of abstraction 
+                   (no instructions, just start, free, and execute 
+                   at the highest level)
+        - instruction.c/.h: One of the lowest levels of abstraction; 
+                            contains the getters for various values 
+                            from instructions, allows for getting of 
+                            values to be easier in execute/memory modules
+        - execute.c/.h: One of the lowest levels of abstraction; executes each
+                        instruction, but does use functions within instruction
+                        to make things less complex, making it more abstract 
+                        than instruction module
+        - memory.c/.h: One of the lowest levels of abstraction; deals with all
+                       memory allocation and deallocation
+    
+    What Secrets Each Module Knows:
+        - main.c   : Number of command line arguments, 
+                     what each argument holds
+        - um.c/.h: Details of starting and freeing the um (and how it accesses
+                   the details of um in memory to do that), and details of how
+                   it updates the program counter when executing
+        - instruction.c/.h: How the values from each instruction are retrieved
+        - execute.c/.h: Details of how the um instructions are executed
+        - memory.c/.h: Details of memory management (the memory allocation
+                       and deallocation of this program), and the information
+                       about the um (registers, memory, free memory, program
+                       counter)
+
+    How Each Module Relates To One Another:
+        - main.c : Executes um module if command line arguments work out
+        - um.c/.h: Starts the um, which uses execute and memory modules to 
+                   execute instructions
+        - instruction.c/.h: Is used by execute module to get values 
+                            from instructions
+        - execute.c/.h: Is used by um module to run a portion of 
+                        the instructions, uses instruction module 
+                        to get values from instructions
+        - memory.c/.h: Is used by um module to run a portion of the
+                       instructions as well as to initialize the um
+
+---------------------------------------------------------------------------
+r0 - r7 Registers:  Hanson's Uarray
+                    ***************
+                    The reason that we decided to use Hanson’s uarray in our
+                    r0-r7 registers is because the registers are a fixed size 
+                    (size of 8 to hold the registers r0 through r7) and uarray
+                    is an unboxed structure, which will store the value
+                    directly.
+
+Main memory:        Hanson’s Sequence
+                    ***************
+                    he reason that we decided to use Hanson’s sequence in our
+                    main memory is because the sequence can be expanded
+                    automatically which is more flexible. And since sequence
+                    is boxed, what stored inside the sequence are the
+                    addresses of the data, which means each element of the
+                    sequence will points to a UArray element. 
+
+Segment:            Hanson’s Sequence
+                    ***************
+                    We choose to use Hanson’s Uarray to store the values in 
+                    the memory since we can change the value stored directly 
+                    in an unboxed structure, and we can decide the size of 
+                    uarray when we store the value into the memory. 
+
+Freed Memory Index: Hanson’s Sequence
+                    ***************
+                    After releasing the memory of a certain element in the
+                    sequence, that index will be recorded to this stack for
+                    later reuse. 
+
+---------------------------------------------------------------------------
+Time Taken For 50 Million Instructions:
+    Time: 6.19 seconds
+    Reason: Through using a counter in the program and doing trials with
+            various numbers of instructions, we were able to collect data
+            points and create a model that could estimate the time for 50
+            million instructions, which allowed us to reach the number 
+            listed above
+            
+    Number of Instructions     |    Time Taken (s) 
+    x                          |    y
+    -----------------------------------------------------------
+    31                         |    0
+    85070522                   |    10.54
+    2113497561                 |    264.55
+    
+    Mathematical Model (Line of Best Fit): y = (1.25*10^-7) x + (-0.0521)
+
+
+---------------------------------------------------------------------------
+UM Tests:
+    halt.um:
+        What: Tests halt
+        How: Simply halts the program
+    halt-verbose.um:
+        What: Tests halt with extra precautions
+        How: Halts the program, then ensures "Bad!" is not outputted after
+    print-six.um:
+        What: Tests add and output
+        How: Adds two values and outputs it based on its ASCII value, and
+             the value printed should be 6
+    add.um:
+        What: Tests add
+        How: Gets results from various multiplications, from single digit,
+             double digit, triple digit, and larger numbers, and tester checks 
+             that the results are as expected
+    mul.um:
+        What: Tests multiply
+        How: Gets results from various multiplications, from single digit,
+             double digit, triple digit, and larger numbers (including results
+             that wrap around, testing the mod edge case), and tester checks
+             that the results are as expected
+    div.um:
+        What: Tests divide
+        How: Gets results from various multiplications, from single digit,
+             double digit, triple digit, and larger numbers, and tester checks
+             that the results are as expected
+    nand.um:
+        What: Tests nand
+        How: Gets results from various nands and tester checks that the results
+             are as expected
+    condtional-move1.um & conditional-move2.um: 
+        What: Tests conditional move
+        How: Put different integers into the registers, and test if the 
+             conditional statement works
+    map.um:
+        What: Tests map and unmap
+        How: Activate several segments and inactivate. Check the lengths of 
+             the segments and if there is memory loss after inactivate.
+    seg.um: 
+        What: Tests segLoad, segStore, map and unmap
+        How: Activate several segments, store some values into segments and 
+             load them out. Inactivate the segments. Assert if outside of the 
+             bound of the segment. 
+    loadProgram.um:
+        What: Tests loadProgram
+        How: Use loadProgram to skip some instructions 
+
+
+---------------------------------------------------------------------------  
+Additional Tests (Provided by Comp 40 Staff):
+    cat.um:
+        What: Tests input and output
+        How: User inputs something, the output is the same thing
+    midmark.um:
+        What:  a mid-size benchmark 
+        How: Check if the output is the same as the provided output
+    sandmark.umz:
+        What: a self-decompressing benchmark
+        How: Check if the output is the same as the provided output
+    hello.um:
+        What: Tests output
+        How: Prints out hello world
+    advent.umz:
+        What: A text adventure game
+        How: Runs the adventure game properly
+
+
+---------------------------------------------------------------------------
+Time Spent Analyzing Assignment: 
+    5 hours
+
+Time Spent Preparing Design:
+    15 hours
+
+Time Spent Solving The Problem:
+    70 hours
